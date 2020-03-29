@@ -35,9 +35,10 @@ proc writeColor(file: File, col: Vec3): void =
 
 when isMainModule:
     
-    const image_width = 200
-    const image_height = 100
-    const samplesPerPixel = 100
+    const image_width = 1200
+    const image_height = 800
+    const samplesPerPixel = 10
+    const aspectRatio = image_width.toFloat / image_height
 
     var world = initListOfHitables()
     world.add(initSphere(initVec3(0.0, 0.0, -1.0), 0.5, initLambertian( initVec3(0.1, 0.2, 0.5)))) 
@@ -47,10 +48,10 @@ when isMainModule:
     world.add(initSphere(initVec3(-1.0, 0.0, -1.0), 0.5, initDielectric(1.5)))
     # world.add(initSphere(initVec3(-1.0, 0.0, -1.0), -0.45, initDielectric(1.5)))
     
-    world.add(initSphere(initVec3(0.0, -0.15, -0.25), 0.05, initDielectric(1.5)))
-    world.add(initSphere(initVec3(0.0, -0.15, -0.25), -0.045, initDielectric(1.5)))
+    world.add(initSphere(initVec3(0.0, -0.15, -0.25), 0.1, initDielectric(1.5)))
+    world.add(initSphere(initVec3(0.0, -0.15, -0.25), -0.095, initDielectric(1.5)))
 
-    let cam = initCamera()
+    let cam = initCamera(initVec3(-2.0, 2.0, 3.0), initVec3(0.0, 0.0, 0.0), initVec3(0.0, 1.0, 0.0), 30, aspectRatio)
 
     echo "P3\nimage_width {image_width} image_height {image_height}\n255\n".fmt
 

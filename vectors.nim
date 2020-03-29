@@ -111,6 +111,12 @@ proc randomUnitVec*(): Vec3 =
     let r = sqrt(1.0 - z*z)
     initVec3(r*cos(a), r*sin(a), z)
 
+proc randomInUnitDisk*(): Vec3 =
+    while true:
+        let v = initVec3(randomMinMax(-1.0, 1.0), randomMinMax(-1.0, 1.0), 0.0)
+        if v.lengthSq < 1.0:
+            return v
+
 when isMainModule:
     var v = initVec3()
     doAssert v.xyz == [0.0, 0.0, 0.0]
