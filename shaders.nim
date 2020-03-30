@@ -33,8 +33,9 @@ type
     MetalShader* = ref object of MaterialShader    
 
 method scatter*(shader: MetalShader, ray: Ray, hit: var HitRecord, attenuation: var Vec3, scatterRay: var Ray): bool =
+    let metalMat = hit.hitable.material.Metal
     let reflectedDir = ray.dir.unit.reflect(hit.normal)
-    scatterRay = initRay(hit.point, reflectedDir)
+    scatterRay = initRay(hit.point, reflectedDir + metalMat.fuzz * randomUnitVec())
     attenuation = hit.hitable.material.albedo
     reflectedDir.dot(hit.normal) > 0.0
 

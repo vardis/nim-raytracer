@@ -21,8 +21,10 @@ proc initLambertian*(a: Vec3): Lambertian = Lambertian(materialType: LambertianM
 
 type
     Metal* = ref object of Material    
+        fuzz: float64
 
-proc initMetal*(a: Vec3): Metal = Metal(materialType: MetalMaterialType, albedo: a)            
+proc initMetal*(a: Vec3, f: float64): Metal = Metal(materialType: MetalMaterialType, albedo: a, fuzz: f)
+proc fuzz*(m: Metal): float64 = m.fuzz
 
 type
     Dielectric* = ref object of Material
