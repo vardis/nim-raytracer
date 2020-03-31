@@ -82,6 +82,16 @@ proc clamp*(v: Vec3, min: float64 = 0.0, max: float64 = 1.0): Vec3 =
         clamp(v.xyz[1], min, max),
         clamp(v.xyz[2], min, max))
 
+proc zeroNaNs*(v: var Vec3) =
+    if v.xyz[0].classify == fcNaN:
+        v.xyz[0] = 0.0
+
+    if v.xyz[1].classify == fcNaN:
+        v.xyz[1] = 0.0
+
+    if v.xyz[2].classify == fcNaN:
+        v.xyz[2] = 0.0
+
 proc sqrt*(v: var Vec3) = 
     v.xyz[0] = sqrt(v.xyz[0])
     v.xyz[1] = sqrt(v.xyz[1])
@@ -162,3 +172,6 @@ when isMainModule:
             0.0, 1.0]
 
     doAssert (initVec3(2.0, 0.0, 0.0).unit()).xyz == [1.0, 0.0, 0.0]
+
+    let negV = initVec3(-1.0, 0.0, 1.0)
+    doAssert (negV*negV).xyz == [1.0, 0.0, 1.0]

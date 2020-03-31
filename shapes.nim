@@ -84,13 +84,13 @@ method hit*(s: Sphere, ray: Ray, tmin: float64, tmax: float64, hit: var HitRecor
 
     if discriminant > 0.0:
         let root = sqrt(discriminant)
-        var temp = (-half_b - root) / a
+        var temp = (-half_b - root) / a #(a + 0.00001)
         if temp > tmin and temp < tmax:
             hit_point_at(s, ray, temp, hit)
             result = true 
     
         else:
-            temp = (-half_b + root) / a 
+            temp = (-half_b + root) / a #(a + 0.00001) 
             if temp > tmin and temp < tmax:
                 hit_point_at(s, ray, temp, hit)
                 result = true
