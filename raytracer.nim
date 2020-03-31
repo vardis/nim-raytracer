@@ -28,14 +28,23 @@ proc ray_color(r: Ray, h: Hitable, depth: int): Vec3 =
         sky_color(r)
 
 
-proc writeImageBuffer(imageBuffer: seq[float64], file: File): void = 
+proc writeImageBuffer(imageBuffer: seq[float64], imageWidth, imageHeight: int, file: File): void = 
     let buffLen = (imageBuffer.len / 3).int    
 
-    for i in countdown(buffLen-1,0):
-        let xnorm = 256*clamp(imageBuffer[i*3], 0.0, 0.999)
-        let ynorm = 256*clamp(imageBuffer[i*3+1], 0.0, 0.999)
-        let znorm = 256*clamp(imageBuffer[i*3+2], 0.0, 0.999)
-        file.writeLine "{xnorm.int} {ynorm.int} {znorm.int}".fmt
+    for j in countdown(imageHeight - 1, 0):
+        for i in 0..<imageWidth:
+            let idx = 3*(j*imageWidth + i)
+
+            let xnorm = 256*clamp(imageBuffer[idx], 0.0, 0.999)
+            let ynorm = 256*clamp(imageBuffer[idx+1], 0.0, 0.999)
+            let znorm = 256*clamp(imageBuffer[idx+2], 0.0, 0.999)
+            file.writeLine "{xnorm.int} {ynorm.int} {znorm.int}".fmt
+
+    # for i in 0..<buffLen:
+        # let xnorm = 256*clamp(imageBuffer[i*3], 0.0, 0.999)
+        # let ynorm = 256*clamp(imageBuffer[i*3+1], 0.0, 0.999)
+        # let znorm = 256*clamp(imageBuffer[i*3+2], 0.0, 0.999)
+        # file.writeLine "{xnorm.int} {ynorm.int} {znorm.int}".fmt
 
 type
     PixelResult = tuple[x,y: int, color: Vec3]
@@ -91,7 +100,7 @@ proc randomScene(): ListOfHitables =
 proc waitPending(imageBuffer: var seq[float64], width, height: int, pending: seq[FlowVar[PixelResult]]): void =
     for future in pending:
         let pixelRes = ^future
-        let pixelIdx = 3*(pixelRes.y*width + (width - pixelRes.x - 1))
+        let pixelIdx = 3*(pixelRes.y*width + pixelRes.x)
         imageBuffer[pixelIdx] = pixelRes.color.x
         imageBuffer[pixelIdx + 1] = pixelRes.color.y
         imageBuffer[pixelIdx + 2] = pixelRes.color.z
@@ -99,9 +108,9 @@ proc waitPending(imageBuffer: var seq[float64], width, height: int, pending: seq
 
 when isMainModule:
     
-    const image_width = 300
-    const image_height = 200
-    const samplesPerPixel = 10
+    const image_width = 640
+    const image_height = 480
+    const samplesPerPixel = 50
     const aspectRatio = image_width.toFloat / image_height
     const aperture = 0.1
     const lookFrom = initVec3(13.0, 2.0, 3.0)
@@ -118,17 +127,16 @@ when isMainModule:
 
     var pending = newSeq[FlowVar[PixelResult]]()
 
-    for j in countdown(image_height, 1):
-        let y = j - 1
-        stderr.writeLine "\rScanlines remaining: {j} ".fmt
-        for i in 0..<image_width:
-            let future: FlowVar[PixelResult] = spawn computePixel(addr world, cam, image_width, image_height, i, y, samplesPerPixel)
+    for y in 0..<image_height:
+        stderr.writeLine "\rScanlines remaining: {image_height - y - 1} ".fmt
+        for x in 0..<image_width:
+            let future: FlowVar[PixelResult] = spawn computePixel(addr world, cam, image_width, image_height, x, y, samplesPerPixel)
             pending.add(future)
                         
     sync()
 
     waitPending(imageBuffer, image_width, image_height, pending)
 
-    writeImageBuffer(imageBuffer, stdout)
+    writeImageBuffer(imageBuffer, image_width, image_height, stdout)
 
     stderr.writeLine "\nDone.\n"
