@@ -49,6 +49,9 @@ proc writeImageBuffer(imageBuffer: seq[float64], imageWidth, imageHeight: int, f
 type
     PixelResult = tuple[x,y: int, color: Vec3]
 
+
+var chan: Channel[PixelResult]
+
 proc computePixel(world: ptr ListOfHitables, cam: Camera, imgWidth, imgHeight, x, y, samples: int) : PixelResult {.thread.} = 
     var color = initVec3()
 
@@ -61,13 +64,12 @@ proc computePixel(world: ptr ListOfHitables, cam: Camera, imgWidth, imgHeight, x
         
         color += rayColor
     
-    # color.zeroNaNs
     color /= samples.float64
 
     # gamma correction
     color.sqrt()
 
-    (x: x, y: y, color: color)
+    chan.send((x: x, y: y, color: color))
 
     
 proc randomScene(): ListOfHitables = 
@@ -97,19 +99,10 @@ proc randomScene(): ListOfHitables =
     
     world
 
-proc waitPending(imageBuffer: var seq[float64], width, height: int, pending: seq[FlowVar[PixelResult]]): void =
-    for future in pending:
-        let pixelRes = ^future
-        let pixelIdx = 3*(pixelRes.y*width + pixelRes.x)
-        imageBuffer[pixelIdx] = pixelRes.color.x
-        imageBuffer[pixelIdx + 1] = pixelRes.color.y
-        imageBuffer[pixelIdx + 2] = pixelRes.color.z
-        
-
 when isMainModule:
     
-    const image_width = 640
-    const image_height = 480
+    const image_width = 1200
+    const image_height = 800
     const samplesPerPixel = 50
     const aspectRatio = image_width.toFloat / image_height
     const aperture = 0.1
@@ -125,17 +118,21 @@ when isMainModule:
 
     echo "P3\nimage_width {image_width} image_height {image_height}\n255\n".fmt
 
-    var pending = newSeq[FlowVar[PixelResult]]()
+    open(chan)
 
     for y in 0..<image_height:
         stderr.writeLine "\rScanlines remaining: {image_height - y - 1} ".fmt
         for x in 0..<image_width:
-            let future: FlowVar[PixelResult] = spawn computePixel(addr world, cam, image_width, image_height, x, y, samplesPerPixel)
-            pending.add(future)
+            discard spawn computePixel(addr world, cam, image_width, image_height, x, y, samplesPerPixel)
                         
-    sync()
+    # sync()
 
-    waitPending(imageBuffer, image_width, image_height, pending)
+    for i in 0..<image_height*image_width:
+        let pixelRes = chan.recv
+        let pixelIdx = 3*(pixelRes.y*image_width + pixelRes.x)
+        imageBuffer[pixelIdx] = pixelRes.color.x
+        imageBuffer[pixelIdx + 1] = pixelRes.color.y
+        imageBuffer[pixelIdx + 2] = pixelRes.color.z
 
     writeImageBuffer(imageBuffer, image_width, image_height, stdout)
 
